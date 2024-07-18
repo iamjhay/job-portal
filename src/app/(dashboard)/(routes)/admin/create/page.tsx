@@ -16,12 +16,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Link from "next/link";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Job title cannot be empty" }).max(50),
 });
 
 const JobCreatePage = () => {
+  const router = useRouter();
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -33,10 +37,19 @@ const JobCreatePage = () => {
   const { isValid, isSubmitting } = form.formState;
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
-    console.log(values);
+    try {
+      const response = await axios.post("/api/jobs", values);
+      router.push(`/admin/jobs/${response.data.id}`);
+      toast.success("Job created");
+    } catch (error) {
+      console.log((error as Error)?.message);
+      // toast notification
+      const errorMessage = (error as Error)?.message;
+      toast.error(errorMessage);
+    }
   }
 
   return (
@@ -69,8 +82,8 @@ const JobCreatePage = () => {
               )}
             />
             <div className="flex items-center gap-x-2">
-              <Link href={"/"}>
-                <Button variant={"ghost"} type="submit">
+              <Link href={"/admin/jobs"}>
+                <Button variant={"outline"} type="button">
                   Cancel
                 </Button>
               </Link>
